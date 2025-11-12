@@ -1,0 +1,33 @@
+<!-- templates/login.html -->
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Logowanie – Mapa ceł</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="auth-body">
+    <div class="auth-container">
+        <h2>Logowanie administratora</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <ul class="flash-messages">
+              {% for category, message in messages %}
+                <li class="flash flash-{{ category }}">{{ message }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+
+        <form method="post">
+            <label for="username">Login</label>
+            <input id="username" name="username" type="text" required>
+
+            <label for="password">Hasło</label>
+            <input id="password" name="password" type="password" required>
+
+            <button type="submit">Zaloguj</button>
+        </form>
+    </div>
+</body>
+</html>
