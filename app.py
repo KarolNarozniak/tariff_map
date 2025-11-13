@@ -5,6 +5,13 @@ from core.logging_config import configure_logging
 from interface.api import api_bp
 from interface.web import web_bp
 
+# NEW: wczytanie .env (dev-friendly)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # wczyta zmienne z .env, jeśli istnieje
+except Exception:
+    pass
+
 
 def create_app() -> Flask:
     app = Flask(__name__)

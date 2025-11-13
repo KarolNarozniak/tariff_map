@@ -10,14 +10,16 @@ class Config:
     ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "password123")
 
-    # WTO – w PoC nieużywane, ale zostawiamy hooki
+    # WTO – Timeseries API
     WTO_API_KEY = os.environ.get("WTO_API_KEY", "")
-    WTO_DEFAULT_LANGUAGE = 1
-    WTO_DEFAULT_FORMAT = "json"
-    WTO_DEFAULT_OUTPUT_MODE = "full"
+    WTO_DEFAULT_LANGUAGE = int(os.environ.get("WTO_DEFAULT_LANGUAGE", "1"))  # 1=en
+    WTO_DEFAULT_FORMAT = os.environ.get("WTO_DEFAULT_FORMAT", "json")
+
+    # WITS – opcjonalny klucz (często zbędny)
+    WITS_API_KEY = os.environ.get("WITS_API_KEY", "")
 
     # Produkt – tytoń (HS 24 – uproszczone)
-    TOBACCO_CLASSIFICATION = "HS"
-    TOBACCO_PRODUCT_CODE = "24"
+    TOBACCO_CLASSIFICATION = os.environ.get("TOBACCO_CLASSIFICATION", "HS")
+    TOBACCO_PRODUCT_CODE = os.environ.get("TOBACCO_PRODUCT_CODE", "24")
 
-    DEFAULT_YEAR = "2023"
+    DEFAULT_YEAR = os.environ.get("DEFAULT_YEAR", "2023")
