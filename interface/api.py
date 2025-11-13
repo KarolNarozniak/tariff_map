@@ -207,6 +207,42 @@ def _load_hubs_nodes():
     return nodes
 
 
+def _load_sea_waypoints():
+    """
+    Ładuje węzły morskie (waypointy) i ich sąsiedztwa (z właściwości 'neighbors').
+    Zwraca (nodes, edge_pairs) gdzie edge_pairs to lista (id_a, id_b) – połączenia dwukierunkowe.
+    """
+    path = Path("data/sea_waypoints.json")
+    if not path.exists():
+        return [], []
+    with path.open("r", encoding="utf-8") as f:
+        gj = json.load(f)
+    nodes = []
+    pairs = set()
+    for feat in gj.get("features", []):
+        props = feat.get("properties", {})
+        geom = feat.get("geometry", {})
+        if (geom or {}).get("type") != "Point":
+            continue
+        coords = geom.get("coordinates") or []
+        if len(coords) < 2:
+            continue
+        nid = str(props.get("id") or props.get("name"))
+        nodes.append({
+            "id": nid,
+            "name": str(props.get("name") or nid),
+            "kind": "sea_waypoint",
+            "country": None,
+            "iso3": None,
+            "coordinates": [float(coords[0]), float(coords[1])],
+        })
+        for nb in (props.get("neighbors") or []):
+            a, b = nid, str(nb)
+            key = tuple(sorted((a, b)))
+            pairs.add(key)
+    return nodes, list(pairs)
+
+
 def _load_countries_nodes_with_boundaries(quant_prec: int = 3):
     """
     Ładuje kraje jako węzły oraz zbiera zewnętrzne pierścienie granic (uprośc.
@@ -280,12 +316,16 @@ def _load_countries_nodes_with_boundaries(quant_prec: int = 3):
 
 
 def _build_graph(factor_road: float, factor_sea: float, factor_air: float, k_sea: int, k_air: int):
-    # Kraje wraz z danymi granic do wykrywania sąsiedztwa lądowego
+    # Kraje i granice lądowe
     countries, country_boundaries = _load_countries_nodes_with_boundaries()
+    # Huby (porty, lotniska)
     hubs = _load_hubs_nodes()
     ports = [h for h in hubs if h.get("kind") == "seaport"]
     airports = [h for h in hubs if h.get("kind") == "air_cargo"]
-    id_to_node = {n["id"]: n for n in (countries + hubs)}
+    # Waypointy morskie i ich połączenia
+    sea_nodes, sea_pairs = _load_sea_waypoints()
+    # Indeks węzłów
+    id_to_node = {n["id"]: n for n in (countries + hubs + sea_nodes)}
 
     edges = []
 
@@ -340,27 +380,64 @@ def _build_graph(factor_road: float, factor_sea: float, factor_air: float, k_sea
             edges.append({"source": ci["id"], "target": cj["id"], "transport": "road", "distance_km": d, "weight": w})
             edges.append({"source": cj["id"], "target": ci["id"], "transport": "road", "distance_km": d, "weight": w})
 
-    # port <-> K najbliższych portów
-    sea_pairs = set()
-    for i, p in enumerate(ports):
-        plon, plat = p["coordinates"]
-        dists = []
-        for j, q in enumerate(ports):
-            if i == j:
+    # Morski graf: jeśli mamy waypointy morskie, użyj ich zamiast bezpośrednich port<->port
+    if sea_nodes:
+        # port <-> najbliższe waypointy morskie (w promieniu np. 600 km)
+        max_port_wp_km = 600.0
+        k_wp = max(1, min(3, k_sea or 2))
+        for p in ports:
+            plon, plat = p["coordinates"]
+            dists = []
+            for wpn in sea_nodes:
+                wlon, wlat = wpn["coordinates"]
+                d = _haversine_km(plon, plat, wlon, wlat)
+                dists.append((d, wpn))
+            dists.sort(key=lambda x: x[0])
+            added = 0
+            for d, wpn in dists:
+                if d > max_port_wp_km:
+                    break
+                w = d * factor_sea
+                edges.append({"source": p["id"], "target": wpn["id"], "transport": "sea", "distance_km": d, "weight": w})
+                edges.append({"source": wpn["id"], "target": p["id"], "transport": "sea", "distance_km": d, "weight": w})
+                added += 1
+                if added >= k_wp:
+                    break
+
+        # waypoint <-> waypoint wg zadeklarowanych sąsiedztw
+        for a_id, b_id in sea_pairs:
+            a = id_to_node.get(a_id)
+            b = id_to_node.get(b_id)
+            if not a or not b:
                 continue
-            qlon, qlat = q["coordinates"]
-            d = _haversine_km(plon, plat, qlon, qlat)
-            dists.append((d, q))
-        dists.sort(key=lambda x: x[0])
-        for d, q in dists[:max(0, k_sea)]:
-            a, b = p["id"], q["id"]
-            key = tuple(sorted((a, b)))
-            if key in sea_pairs:
-                continue
-            sea_pairs.add(key)
+            alon, alat = a["coordinates"]
+            blon, blat = b["coordinates"]
+            d = _haversine_km(alon, alat, blon, blat)
             w = d * factor_sea
-            edges.append({"source": a, "target": b, "transport": "sea", "distance_km": d, "weight": w})
-            edges.append({"source": b, "target": a, "transport": "sea", "distance_km": d, "weight": w})
+            edges.append({"source": a_id, "target": b_id, "transport": "sea", "distance_km": d, "weight": w})
+            edges.append({"source": b_id, "target": a_id, "transport": "sea", "distance_km": d, "weight": w})
+    else:
+        # fallback: port <-> K najbliższych portów
+        sea_pairs_set = set()
+        for i, p in enumerate(ports):
+            plon, plat = p["coordinates"]
+            dists = []
+            for j, q in enumerate(ports):
+                if i == j:
+                    continue
+                qlon, qlat = q["coordinates"]
+                d = _haversine_km(plon, plat, qlon, qlat)
+                dists.append((d, q))
+            dists.sort(key=lambda x: x[0])
+            for d, q in dists[:max(0, k_sea)]:
+                a, b = p["id"], q["id"]
+                key = tuple(sorted((a, b)))
+                if key in sea_pairs_set:
+                    continue
+                sea_pairs_set.add(key)
+                w = d * factor_sea
+                edges.append({"source": a, "target": b, "transport": "sea", "distance_km": d, "weight": w})
+                edges.append({"source": b, "target": a, "transport": "sea", "distance_km": d, "weight": w})
 
     # lotnisko <-> K najbliższych lotnisk
     air_pairs = set()
