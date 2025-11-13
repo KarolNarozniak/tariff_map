@@ -1,0 +1,426 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_SHANGHAI",
+        "name": "Port of Shanghai",
+        "kind": "seaport",
+        "country": "China",
+        "iso3": "CHN",
+        "rank": 1
+      },
+      "geometry": { "type": "Point", "coordinates": [121.47, 31.23] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_SINGAPORE",
+        "name": "Port of Singapore",
+        "kind": "seaport",
+        "country": "Singapore",
+        "iso3": "SGP",
+        "rank": 2
+      },
+      "geometry": { "type": "Point", "coordinates": [103.85, 1.29] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_NINGBO",
+        "name": "Port of Ningbo-Zhoushan",
+        "kind": "seaport",
+        "country": "China",
+        "iso3": "CHN",
+        "rank": 3
+      },
+      "geometry": { "type": "Point", "coordinates": [121.6, 29.9] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_SHENZHEN",
+        "name": "Port of Shenzhen",
+        "kind": "seaport",
+        "country": "China",
+        "iso3": "CHN",
+        "rank": 4
+      },
+      "geometry": { "type": "Point", "coordinates": [114.1, 22.6] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_GUANGZHOU",
+        "name": "Port of Guangzhou (Nansha)",
+        "kind": "seaport",
+        "country": "China",
+        "iso3": "CHN",
+        "rank": 5
+      },
+      "geometry": { "type": "Point", "coordinates": [113.6, 22.9] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_HONGKONG",
+        "name": "Port of Hong Kong",
+        "kind": "seaport",
+        "country": "Hong Kong, China",
+        "iso3": "HKG",
+        "rank": 6
+      },
+      "geometry": { "type": "Point", "coordinates": [114.2, 22.3] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_BUSAN",
+        "name": "Port of Busan",
+        "kind": "seaport",
+        "country": "Korea, Rep.",
+        "iso3": "KOR",
+        "rank": 7
+      },
+      "geometry": { "type": "Point", "coordinates": [129.0, 35.1] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_QINGDAO",
+        "name": "Port of Qingdao",
+        "kind": "seaport",
+        "country": "China",
+        "iso3": "CHN",
+        "rank": 8
+      },
+      "geometry": { "type": "Point", "coordinates": [120.3, 36.1] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_TIANJIN",
+        "name": "Port of Tianjin",
+        "kind": "seaport",
+        "country": "China",
+        "iso3": "CHN",
+        "rank": 9
+      },
+      "geometry": { "type": "Point", "coordinates": [117.7, 39.0] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_JEBEL_ALI",
+        "name": "Port of Jebel Ali (Dubai)",
+        "kind": "seaport",
+        "country": "United Arab Emirates",
+        "iso3": "ARE",
+        "rank": 10
+      },
+      "geometry": { "type": "Point", "coordinates": [55.1, 25.0] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_ROTTERDAM",
+        "name": "Port of Rotterdam",
+        "kind": "seaport",
+        "country": "Netherlands",
+        "iso3": "NLD",
+        "rank": 11
+      },
+      "geometry": { "type": "Point", "coordinates": [4.5, 51.9] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_ANTWERP",
+        "name": "Port of Antwerp-Bruges",
+        "kind": "seaport",
+        "country": "Belgium",
+        "iso3": "BEL",
+        "rank": 12
+      },
+      "geometry": { "type": "Point", "coordinates": [4.4, 51.2] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_HAMBURG",
+        "name": "Port of Hamburg",
+        "kind": "seaport",
+        "country": "Germany",
+        "iso3": "DEU",
+        "rank": 13
+      },
+      "geometry": { "type": "Point", "coordinates": [10.0, 53.5] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_PIRAEUS",
+        "name": "Port of Piraeus",
+        "kind": "seaport",
+        "country": "Greece",
+        "iso3": "GRC",
+        "rank": 14
+      },
+      "geometry": { "type": "Point", "coordinates": [23.6, 37.9] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_VALENCIA",
+        "name": "Port of Valencia",
+        "kind": "seaport",
+        "country": "Spain",
+        "iso3": "ESP",
+        "rank": 15
+      },
+      "geometry": { "type": "Point", "coordinates": [-0.33, 39.45] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_ALGECIRAS",
+        "name": "Port of Algeciras",
+        "kind": "seaport",
+        "country": "Spain",
+        "iso3": "ESP",
+        "rank": 16
+      },
+      "geometry": { "type": "Point", "coordinates": [-5.45, 36.13] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_NY_NJ",
+        "name": "Port of New York and New Jersey",
+        "kind": "seaport",
+        "country": "United States",
+        "iso3": "USA",
+        "rank": 17
+      },
+      "geometry": { "type": "Point", "coordinates": [-74.0, 40.7] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_LA",
+        "name": "Port of Los Angeles",
+        "kind": "seaport",
+        "country": "United States",
+        "iso3": "USA",
+        "rank": 18
+      },
+      "geometry": { "type": "Point", "coordinates": [-118.27, 33.73] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_LONG_BEACH",
+        "name": "Port of Long Beach",
+        "kind": "seaport",
+        "country": "United States",
+        "iso3": "USA",
+        "rank": 19
+      },
+      "geometry": { "type": "Point", "coordinates": [-118.2, 33.77] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_SAVANNAH",
+        "name": "Port of Savannah",
+        "kind": "seaport",
+        "country": "United States",
+        "iso3": "USA",
+        "rank": 20
+      },
+      "geometry": { "type": "Point", "coordinates": [-81.1, 32.1] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_SANTOS",
+        "name": "Port of Santos",
+        "kind": "seaport",
+        "country": "Brazil",
+        "iso3": "BRA",
+        "rank": 21
+      },
+      "geometry": { "type": "Point", "coordinates": [-46.3, -23.9] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_FELIXSTOWE",
+        "name": "Port of Felixstowe",
+        "kind": "seaport",
+        "country": "United Kingdom",
+        "iso3": "GBR",
+        "rank": 22
+      },
+      "geometry": { "type": "Point", "coordinates": [1.35, 51.96] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_PORT_KLANG",
+        "name": "Port Klang",
+        "kind": "seaport",
+        "country": "Malaysia",
+        "iso3": "MYS",
+        "rank": 23
+      },
+      "geometry": { "type": "Point", "coordinates": [101.4, 3.0] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_TANJUNG_PELEPAS",
+        "name": "Port of Tanjung Pelepas",
+        "kind": "seaport",
+        "country": "Malaysia",
+        "iso3": "MYS",
+        "rank": 24
+      },
+      "geometry": { "type": "Point", "coordinates": [103.55, 1.37] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "PORT_COLOMBO",
+        "name": "Port of Colombo",
+        "kind": "seaport",
+        "country": "Sri Lanka",
+        "iso3": "LKA",
+        "rank": 25
+      },
+      "geometry": { "type": "Point", "coordinates": [79.85, 6.93] }
+    },
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "AIR_HKG",
+        "name": "Hong Kong International Airport",
+        "kind": "air_cargo",
+        "country": "Hong Kong, China",
+        "iso3": "HKG",
+        "iata": "HKG"
+      },
+      "geometry": { "type": "Point", "coordinates": [113.93, 22.31] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "AIR_MEM",
+        "name": "Memphis International Airport",
+        "kind": "air_cargo",
+        "country": "United States",
+        "iso3": "USA",
+        "iata": "MEM"
+      },
+      "geometry": { "type": "Point", "coordinates": [-89.98, 35.04] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "AIR_PVG",
+        "name": "Shanghai Pudong International Airport",
+        "kind": "air_cargo",
+        "country": "China",
+        "iso3": "CHN",
+        "iata": "PVG"
+      },
+      "geometry": { "type": "Point", "coordinates": [121.8, 31.15] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "AIR_ICN",
+        "name": "Incheon International Airport",
+        "kind": "air_cargo",
+        "country": "Korea, Rep.",
+        "iso3": "KOR",
+        "iata": "ICN"
+      },
+      "geometry": { "type": "Point", "coordinates": [126.45, 37.46] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "AIR_ANC",
+        "name": "Ted Stevens Anchorage International Airport",
+        "kind": "air_cargo",
+        "country": "United States",
+        "iso3": "USA",
+        "iata": "ANC"
+      },
+      "geometry": { "type": "Point", "coordinates": [-149.99, 61.17] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "AIR_SDF",
+        "name": "Louisville Muhammad Ali International Airport",
+        "kind": "air_cargo",
+        "country": "United States",
+        "iso3": "USA",
+        "iata": "SDF"
+      },
+      "geometry": { "type": "Point", "coordinates": [-85.74, 38.18] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "AIR_DOH",
+        "name": "Hamad International Airport",
+        "kind": "air_cargo",
+        "country": "Qatar",
+        "iso3": "QAT",
+        "iata": "DOH"
+      },
+      "geometry": { "type": "Point", "coordinates": [51.61, 25.27] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "AIR_DXB",
+        "name": "Dubai International Airport",
+        "kind": "air_cargo",
+        "country": "United Arab Emirates",
+        "iso3": "ARE",
+        "iata": "DXB"
+      },
+      "geometry": { "type": "Point", "coordinates": [55.36, 25.25] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "AIR_CVG",
+        "name": "Cincinnati/Northern Kentucky International Airport",
+        "kind": "air_cargo",
+        "country": "United States",
+        "iso3": "USA",
+        "iata": "CVG"
+      },
+      "geometry": { "type": "Point", "coordinates": [-84.66, 39.06] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "AIR_FRA",
+        "name": "Frankfurt Airport",
+        "kind": "air_cargo",
+        "country": "Germany",
+        "iso3": "DEU",
+        "iata": "FRA"
+      },
+      "geometry": { "type": "Point", "coordinates": [8.57, 50.04] }
+    }
+  ]
+}

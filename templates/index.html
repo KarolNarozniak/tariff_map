@@ -34,6 +34,53 @@
                 Brak wybranego kraju.
             </div>
 
+            <hr style="margin:1rem 0; border:0; border-top:1px solid #e5e7eb;" />
+
+            <section id="route-panel">
+                <h3 style="margin-top:0">Wyznacz trasę</h3>
+                <label for="route-from">Skąd (kraj):</label>
+                <input id="route-from" list="countries-list" placeholder="np. Poland lub POL" />
+
+                <label for="route-to" style="margin-top:0.5rem; display:block;">Dokąd (kraj):</label>
+                <input id="route-to" list="countries-list" placeholder="np. Germany lub DEU" />
+
+                <datalist id="countries-list"></datalist>
+
+                <div style="margin-top:0.75rem; font-size:0.85rem; color:#374151;">
+                    Wagi transportu (niższa = tańszy, wyższa = droższy):
+                </div>
+                <div class="factors-grid" style="display:grid; grid-template-columns: 1fr auto; gap:6px; margin-top:6px;">
+                    <label>Droga/kolej</label>
+                    <input id="factor-road" type="number" step="0.1" min="0.1" max="10" value="1.0" />
+                    <label>Morze</label>
+                    <input id="factor-sea" type="number" step="0.1" min="0.1" max="10" value="0.5" />
+                    <label>Lotniczy</label>
+                    <input id="factor-air" type="number" step="0.1" min="0.1" max="10" value="5.0" />
+                </div>
+
+                <div style="margin-top:8px; font-size:0.85rem; color:#374151;">Presety:</div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">
+                    <button type="button" id="preset-cheap" style="flex:1; padding:6px; border:1px solid #e5e7eb; border-radius:6px; background:#f9fafb; cursor:pointer;">Najtańsza</button>
+                    <button type="button" id="preset-balanced" style="flex:1; padding:6px; border:1px solid #e5e7eb; border-radius:6px; background:#f9fafb; cursor:pointer;">Zbalansowana</button>
+                    <button type="button" id="preset-fast" style="flex:1; padding:6px; border:1px solid #e5e7eb; border-radius:6px; background:#f9fafb; cursor:pointer;">Najszybsza</button>
+                </div>
+
+                <button id="route-go" style="margin-top:0.75rem; width:100%; padding:0.5rem; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer;">Znajdź trasę</button>
+
+                <div id="route-summary" style="margin-top:0.75rem; font-size:0.9rem;"></div>
+                <div id="route-legs" style="margin-top:0.5rem; font-size:0.85rem; max-height:220px; overflow:auto;"></div>
+
+                <div style="margin-top:0.5rem; font-size:0.8rem; color:#374151;">
+                    Kolory odcinków: <span style="display:inline-block;width:10px;height:10px;background:#6b7280;border-radius:2px;margin:0 4px -1px 6px;"></span> droga/kolej,
+                    <span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border-radius:2px;margin:0 4px -1px 6px;"></span> morze,
+                    <span style="display:inline-block;width:10px;height:10px;background:#f97316;border-radius:2px;margin:0 4px -1px 6px;"></span> lotniczy
+                </div>
+
+                <div style="margin-top:0.5rem; font-size:0.75rem; color:#6b7280;">
+                    Podpowiedź: zacznij wpisywać nazwę kraju lub kod ISO3, skorzystaj z listy.
+                </div>
+            </section>
+
             <div id="legend" class="legend">
                 <!-- uzupełniane w JS -->
             </div>
