@@ -30,31 +30,44 @@ def get_countries():
 @api_bp.route("/tariffs")
 @login_required
 def get_tariffs():
-    """Zwraca stawki celne z offline tobacco_index.json"""
+    """
+    Zwraca stawki celne dla HS 24 z offline tobacco_index.json.
+
+    Parametry:
+      ?from=USA (ISO3 reportera)
+    """
     reporter = request.args.get("from")
     if not reporter:
         return jsonify({"error": "Missing 'from' parameter (ISO3)"}), 400
 
     reporter = reporter.upper()
-
-    # HS chapter 24 (tytoń)
-    chapter = "24"
+    chapter = "24"  # HS chapter dla tytoniu
 
     chapter_data = TOBACCO_INDEX.get(chapter, {})
     reporter_data = chapter_data.get(reporter, {})
 
     tariffs = []
     for partner_iso3, entry in reporter_data.items():
+        raw_rate = entry.get("rate")
+        year = entry.get("year")
+        if raw_rate is None:
+            continue
+
+        # MacMap: wartości są w ułamkach (np. 0.30 = 30%)
+        rate_pct = float(raw_rate) * 100.0
+
         tariffs.append({
+            "reporter": reporter,
             "partner": partner_iso3,
-            "rate": entry.get("rate"),
-            "year": entry.get("year"),
+            "rate": rate_pct,
+            "year": year,
+            "unit": "percent",
         })
 
     return jsonify({
         "reporter": reporter,
         "product": {"classification": "HS", "code": chapter},
-        "source": "Offline MacMap dataset",
+        "source": "Offline MacMap dataset (Effectively applied, min, HS6, aggregated bilaterally)",
         "tariffs": tariffs,
-        "year": max([t["year"] for t in tariffs], default=None)
+        "year": max((t["year"] for t in tariffs if t["year"]), default=None),
     })
