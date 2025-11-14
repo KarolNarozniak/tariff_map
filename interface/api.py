@@ -92,11 +92,12 @@ def get_logistics_nodes():
 
     base_feats = _read_features(Path("data/logistics_nodes.json"))
     extra_feats = _read_features(Path("data/logistics_nodes_extra.json"))
+    cities_feats = _read_features(Path("data/logistics_cities.json"))
 
     # dedupe by properties.id when present
     merged = []
     seen = set()
-    for feat in base_feats + extra_feats:
+    for feat in base_feats + extra_feats + cities_feats:
         props = feat.get("properties", {}) if isinstance(feat, dict) else {}
         fid = props.get("id")
         if fid is None:
@@ -226,8 +227,9 @@ def _load_hubs_nodes():
 
     base_nodes = _read_file(Path("data/logistics_nodes.json"))
     extra_nodes = _read_file(Path("data/logistics_nodes_extra.json"))
+    city_nodes = _read_file(Path("data/logistics_cities.json"))
     merged = {}
-    for n in base_nodes + extra_nodes:
+    for n in base_nodes + extra_nodes + city_nodes:
         merged[n["id"]] = n  # dedupe by id (extra can extend, but base wins if same id order-wise)
     return list(merged.values())
 
@@ -347,6 +349,7 @@ def _build_graph(factor_road: float, factor_sea: float, factor_air: float, k_sea
     hubs = _load_hubs_nodes()
     ports = [h for h in hubs if h.get("kind") == "seaport"]
     airports = [h for h in hubs if h.get("kind") == "air_cargo"]
+    cities = [h for h in hubs if h.get("kind") == "city"]
     # Waypointy morskie i ich połączenia
     sea_nodes, sea_pairs = _load_sea_waypoints()
     # Indeks węzłów
@@ -386,6 +389,50 @@ def _build_graph(factor_road: float, factor_sea: float, factor_air: float, k_sea
                 w = best_d * factor_road
                 edges.append({"source": c["id"], "target": best_a["id"], "transport": "road", "distance_km": best_d, "weight": w})
                 edges.append({"source": best_a["id"], "target": c["id"], "transport": "road", "distance_km": best_d, "weight": w})
+
+    # city <-> powiązania: do kraju, najbliższego portu i lotniska (w obrębie tego samego ISO3)
+    # to pozwala startować/kończyć trasy na miastach
+    if cities:
+        # indeks krajów po ISO3
+        country_by_iso = {}
+        for cn in countries:
+            iso = (cn.get("iso3") or "").upper()
+            if iso and iso not in country_by_iso:
+                country_by_iso[iso] = cn
+        for city in cities:
+            clon, clat = city["coordinates"]
+            iso = (city.get("iso3") or "").upper()
+            # powiązanie z krajem
+            cnode = country_by_iso.get(iso)
+            if cnode:
+                d = _haversine_km(clon, clat, cnode["coordinates"][0], cnode["coordinates"][1])
+                w = d * factor_road
+                edges.append({"source": city["id"], "target": cnode["id"], "transport": "road", "distance_km": d, "weight": w})
+                edges.append({"source": cnode["id"], "target": city["id"], "transport": "road", "distance_km": d, "weight": w})
+            # najbliższy port w tym samym kraju
+            ports_in = [p for p in ports if (p.get("iso3") or "").upper() == iso]
+            if ports_in:
+                bestp, bestd = None, 1e18
+                for p in ports_in:
+                    d = _haversine_km(clon, clat, p["coordinates"][0], p["coordinates"][1])
+                    if d < bestd:
+                        bestd, bestp = d, p
+                if bestp:
+                    w = bestd * factor_road
+                    edges.append({"source": city["id"], "target": bestp["id"], "transport": "road", "distance_km": bestd, "weight": w})
+                    edges.append({"source": bestp["id"], "target": city["id"], "transport": "road", "distance_km": bestd, "weight": w})
+            # najbliższe lotnisko w tym samym kraju
+            airports_in = [a for a in airports if (a.get("iso3") or "").upper() == iso]
+            if airports_in:
+                besta, bestd = None, 1e18
+                for a in airports_in:
+                    d = _haversine_km(clon, clat, a["coordinates"][0], a["coordinates"][1])
+                    if d < bestd:
+                        bestd, besta = d, a
+                if besta:
+                    w = bestd * factor_road
+                    edges.append({"source": city["id"], "target": besta["id"], "transport": "road", "distance_km": bestd, "weight": w})
+                    edges.append({"source": besta["id"], "target": city["id"], "transport": "road", "distance_km": bestd, "weight": w})
 
     # kraj <-> kraj (połączenia lądowe na podstawie styku granic – wspólne punkty pierścieni)
     n_c = len(countries)
@@ -583,10 +630,12 @@ def compute_route():
         except Exception:
             return default
 
+    source_node = (payload.get("source_node") or "").strip() or None
+    target_node = (payload.get("target_node") or "").strip() or None
     source_iso3 = (payload.get("source_iso3") or "").upper().strip()
     target_iso3 = (payload.get("target_iso3") or "").upper().strip()
-    if not source_iso3 or not target_iso3:
-        return jsonify({"error": "source_iso3 and target_iso3 are required"}), 400
+    if not (source_node or source_iso3) or not (target_node or target_iso3):
+        return jsonify({"error": "Provide either source_node/target_node or source_iso3/target_iso3"}), 400
 
     factor_sea = _num(payload.get("factor_sea"), 0.5)
     factor_air = _num(payload.get("factor_air"), 5.0)
@@ -600,13 +649,19 @@ def compute_route():
     id_to_node = built["id_to_node"]
     edges = built["edges"]
 
-    source_id = f"COUNTRY_{source_iso3}"
-    target_id = f"COUNTRY_{target_iso3}"
+    if source_node:
+        source_id = source_node
+    else:
+        source_id = f"COUNTRY_{source_iso3}"
+    if target_node:
+        target_id = target_node
+    else:
+        target_id = f"COUNTRY_{target_iso3}"
 
     if source_id not in id_to_node:
-        return jsonify({"error": f"Unknown source country: {source_iso3}"}), 400
+        return jsonify({"error": f"Unknown source: {source_id}"}), 400
     if target_id not in id_to_node:
-        return jsonify({"error": f"Unknown target country: {target_iso3}"}), 400
+        return jsonify({"error": f"Unknown target: {target_id}"}), 400
 
     # adjacency: node_id -> list of (neighbor_id, weight, edge_index)
     adj = {}

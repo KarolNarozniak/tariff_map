@@ -46,13 +46,18 @@
 
             <section id="route-panel">
                 <h3 style="margin-top:0">Wyznacz trasę</h3>
-                <label for="route-from">Skąd (kraj):</label>
-                <input id="route-from" list="countries-list" placeholder="np. Poland lub POL" />
+                <label for="route-from">Skąd (kraj/port/lotnisko/hub):</label>
+                <input id="route-from" list="locations-list" placeholder="np. Poland (POL) lub Port of Rotterdam [PORT_ROTTERDAM]" />
 
-                <label for="route-to" style="margin-top:0.5rem; display:block;">Dokąd (kraj):</label>
-                <input id="route-to" list="countries-list" placeholder="np. Germany lub DEU" />
+                <label for="route-to" style="margin-top:0.5rem; display:block;">Dokąd (kraj/port/lotnisko/hub):</label>
+                <input id="route-to" list="locations-list" placeholder="np. Germany (DEU) lub Frankfurt Airport [AIR_FRA]" />
 
-                <datalist id="countries-list"></datalist>
+                <datalist id="locations-list"></datalist>
+
+                <div style="display:flex; gap:6px; margin-top:6px;">
+                    <button type="button" id="route-pick-start" style="flex:1; padding:6px; border:1px solid #e5e7eb; border-radius:6px; background:#eef2ff; cursor:pointer;">Wybierz na mapie (2 kliknięcia)</button>
+                    <button type="button" id="route-pick-cancel" style="padding:6px 10px; border:1px solid #e5e7eb; border-radius:6px; background:#f9fafb; cursor:pointer;">Anuluj</button>
+                </div>
 
                 <div style="margin-top:0.75rem; font-size:0.85rem; color:#374151;">
                     Wagi transportu (niższa = tańszy, wyższa = droższy):

@@ -12,6 +12,8 @@ let tariffDataByNum = {};       // klucz: ISO_numerical (np. "156") → rate (na
 let globalFallbackRate = null;  // na razie praktycznie nieużywane przy offline
 let currentReporter = null;     // ISO3 reportera (kraj docelowy wybrany na mapie)
 let countriesIndex = [];        // lista krajów: {iso3, name, lon, lat}
+let nodesIndex = [];            // lista węzłów: {id, name, kind, iso3, lon, lat}
+let routePick = { active: false, stage: 'from' }; // tryb wyboru trasy kliknięciami
 
 // Stała skala kolorów: 0% = biały, następnie 20 równych przedziałów po 5 p.p. (0–5, 5–10, ..., 95–100).
 const FIXED_COLOR_STEPS = 20; 
@@ -96,6 +98,12 @@ function initMap() {
     attribution: "&copy; OpenStreetMap contributors",
   }).addTo(map);
 
+  // Ustal kolejność nakładek: kraje niżej, węzły wyżej
+  map.createPane('countries');
+  map.getPane('countries').style.zIndex = 400; // poniżej markerów
+  map.createPane('nodes');
+  map.getPane('nodes').style.zIndex = 620; // powyżej polygonów (markerPane ~600)
+
   loadCountries();
   loadLogisticsNodes();
 }
@@ -105,14 +113,15 @@ function loadCountries() {
     .then((resp) => resp.json())
     .then((geojson) => {
       countriesLayer = L.geoJSON(geojson, {
+        pane: 'countries',
         // ważne: używamy styleWithTariff jako bazowego stylu
         style: styleWithTariff,
         onEachFeature: onEachCountryFeature,
       }).addTo(map);
 
       // Zbuduj indeks krajów (dla podpowiedzi i routingu)
-      buildCountriesIndex(geojson);
-      populateCountriesDatalist();
+  buildCountriesIndex(geojson);
+  populateLocationsDatalist();
       initRoutingUI();
     })
     .catch((err) => {
@@ -235,12 +244,42 @@ function onEachCountryFeature(feature, layer) {
     }
   });
 
-  // Kliknięcie – wybór kraju docelowego (reportera)
+  // Kliknięcie – albo wybór źródło/cel dla trasy, albo dotychczasowy wybór reportera
   layer.on("click", () => {
     if (!iso3) {
-      setSelectedCountry(name, "—");
+      if (routePick.active) setRoutePanelMessage('Nie rozpoznano kraju. Wybierz inny obszar.');
+      else setSelectedCountry(name, "—");
       return;
     }
+
+    if (routePick.active) {
+      if (routePick.stage === 'from') {
+        setRouteInputValue('from', name, iso3);
+        setRoutePanelMessage(`Wybrano kraj początkowy: ${name} (${iso3}). Teraz kliknij kraj docelowy.`);
+        // Pokoloruj mapę wg stawek dla wybranego kraju (jak wcześniej)
+        setSelectedCountry(name, iso3);
+        loadTariffs(iso3);
+        routePick.stage = 'to';
+      } else {
+        setRouteInputValue('to', name, iso3);
+        setRoutePanelMessage(`Wybrano kraj docelowy: ${name} (${iso3}). Wyznaczam trasę...`);
+        // pobierz faktory i uruchom routing
+        const factorRoad = parseFloat(document.getElementById('factor-road')?.value || '1.0');
+        const factorSea = parseFloat(document.getElementById('factor-sea')?.value || '0.5');
+        const factorAir = parseFloat(document.getElementById('factor-air')?.value || '5.0');
+        const fromIso = resolveCountryInputToISO3(document.getElementById('route-from')?.value || '');
+        const toIso = resolveCountryInputToISO3(document.getElementById('route-to')?.value || '');
+        cancelRoutePick();
+        if (fromIso && toIso) {
+          computeRouteRequest(fromIso, toIso, { factorRoad, factorSea, factorAir });
+        } else {
+          setRoutePanelMessage('Brakuje jednego z krajów. Spróbuj ponownie.');
+        }
+      }
+      return; // nie uruchamiaj logiki stawek
+    }
+
+    // Tryb standardowy – wybór kraju docelowego do stawek
     setSelectedCountry(name, iso3);
     loadTariffs(iso3);
   });
@@ -346,21 +385,29 @@ function loadLogisticsNodes() {
   fetch("/api/logistics_nodes")
     .then((resp) => resp.json())
     .then((geojson) => {
+      // Zbuduj indeks węzłów dla sugestii
+      buildNodesIndex(geojson);
+      populateLocationsDatalist();
+
       nodesLayer = L.geoJSON(geojson, {
+        pane: 'nodes',
         pointToLayer: (feature, latlng) => {
           const kind = feature.properties?.kind || "hub";
           // Kolory w zależności od typu
           let fill = "#0ea5e9"; // domyślny niebieski
           if (kind === "seaport") fill = "#3b82f6";
           if (kind === "air_cargo") fill = "#f97316";
+          if (kind === "city") fill = "#22c55e"; // zielony dla miast
 
           return L.circleMarker(latlng, {
+            pane: 'nodes',
             radius: 5,
             fillColor: fill,
             color: "#111827",
             weight: 1,
             opacity: 1,
             fillOpacity: 0.9,
+            interactive: true,
           });
         },
         onEachFeature: (feature, layer) => {
@@ -374,8 +421,35 @@ function loadLogisticsNodes() {
             `<b>${name}</b><br/>${country}<br/><i>${kind}</i><br/>ID: ${id}`,
             { sticky: true }
           );
+
+          layer.on('click', () => {
+            if (!routePick.active) return; // obsługujemy tylko w trybie wyboru trasy
+            const display = `${name} [${id}]`;
+            if (routePick.stage === 'from') {
+              setRoutePanelMessage(`Wybrano punkt początkowy: ${name}. Teraz kliknij punkt docelowy.`);
+              setRouteInput('from', display);
+              // dodatkowo pokoloruj cła wg kraju punktu jeśli to ma sens
+              const iso3 = (p.iso3 || '').toUpperCase();
+              const cName = country || name;
+              if (iso3) {
+                setSelectedCountry(cName, iso3);
+                loadTariffs(iso3);
+              }
+              routePick.stage = 'to';
+            } else {
+              setRoutePanelMessage(`Wybrano punkt docelowy: ${name}. Wyznaczam trasę...`);
+              setRouteInput('to', display);
+              const params = readFactorParams();
+              const fromSel = resolveLocationInput(document.getElementById('route-from')?.value || '');
+              const toSel = resolveLocationInput(document.getElementById('route-to')?.value || '');
+              cancelRoutePick();
+              requestRouteFromSelections(fromSel, toSel, params);
+            }
+          });
         },
-      }).addTo(map);
+  }).addTo(map);
+  try { nodesLayer.bringToFront(); } catch {}
+  try { if (countriesLayer) countriesLayer.bringToBack(); } catch {}
     })
     .catch((err) => {
       console.error("Error loading logistics nodes:", err);
@@ -396,6 +470,27 @@ function buildCountriesIndex(geojson) {
   }
   // sort by name for nicer suggestions
   countriesIndex.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function buildNodesIndex(geojson) {
+  nodesIndex = [];
+  for (const f of (geojson.features || [])) {
+    const p = f.properties || {};
+    const g = f.geometry || {};
+    if (g.type !== 'Point') continue;
+    const id = String(p.id || '').trim();
+    if (!id) continue;
+    const coords = g.coordinates || [];
+    if (!Array.isArray(coords) || coords.length < 2) continue;
+    nodesIndex.push({
+      id,
+      name: p.name || id,
+      kind: p.kind || 'hub',
+      iso3: (p.iso3 || '').toUpperCase() || null,
+      lon: Number(coords[0]),
+      lat: Number(coords[1])
+    });
+  }
 }
 
 function centroidFromGeometry(geometry) {
@@ -424,13 +519,22 @@ function centroidFromGeometry(geometry) {
   return [lons.reduce((a,b)=>a+b,0)/lons.length, lats.reduce((a,b)=>a+b,0)/lats.length];
 }
 
-function populateCountriesDatalist() {
-  const dl = document.getElementById('countries-list');
+function populateLocationsDatalist() {
+  const dl = document.getElementById('locations-list');
   if (!dl) return;
   dl.innerHTML = '';
+  // Kraje
   for (const c of countriesIndex) {
     const opt = document.createElement('option');
     opt.value = `${c.name} (${c.iso3})`;
+    dl.appendChild(opt);
+  }
+  // Węzły
+  for (const n of nodesIndex) {
+    const opt = document.createElement('option');
+    const iso = n.iso3 ? ` ${n.iso3}` : '';
+    opt.value = `${n.name} [${n.id}]`;
+    opt.label = `${n.name} • ${n.kind}${iso ? ' • ' + iso : ''}`;
     dl.appendChild(opt);
   }
 }
@@ -439,20 +543,16 @@ function initRoutingUI() {
   const btn = document.getElementById('route-go');
   if (!btn) return;
   btn.addEventListener('click', () => {
-    const fromVal = document.getElementById('route-from')?.value?.trim() || '';
-    const toVal = document.getElementById('route-to')?.value?.trim() || '';
-    const isoFrom = resolveCountryInputToISO3(fromVal);
-    const isoTo = resolveCountryInputToISO3(toVal);
-    const factorRoad = parseFloat(document.getElementById('factor-road')?.value || '1.0');
-    const factorSea = parseFloat(document.getElementById('factor-sea')?.value || '0.5');
-    const factorAir = parseFloat(document.getElementById('factor-air')?.value || '5.0');
-
-    if (!isoFrom || !isoTo) {
-      renderRouteSummary({ error: 'Podaj prawidłowe kraje w polach Skąd i Dokąd.' });
+    const params = readFactorParams();
+    const fromSel = resolveLocationInput(document.getElementById('route-from')?.value?.trim() || '');
+    const toSel = resolveLocationInput(document.getElementById('route-to')?.value?.trim() || '');
+    if (!fromSel || !toSel) {
+      renderRouteSummary({ error: 'Podaj prawidłowe wartości w polach Skąd i Dokąd.' });
       return;
     }
-
-    computeRouteRequest(isoFrom, isoTo, { factorRoad, factorSea, factorAir });
+    // Pokoloruj mapę wg stawek dla wybranego punktu startowego (jeśli ma ISO3)
+    colorTariffsForStart(fromSel);
+    requestRouteFromSelections(fromSel, toSel, params);
   });
 
   // Ułatwienia jak w Google Maps: Enter w polu "Skąd" fokusuje "Dokąd", Enter w "Dokąd" startuje trasę
@@ -475,29 +575,86 @@ function initRoutingUI() {
   document.getElementById('preset-cheap')?.addEventListener('click', () => applyPreset('cheap'));
   document.getElementById('preset-balanced')?.addEventListener('click', () => applyPreset('balanced'));
   document.getElementById('preset-fast')?.addEventListener('click', () => applyPreset('fast'));
+
+  // Wybór trasy kliknięciami (2 kliknięcia)
+  document.getElementById('route-pick-start')?.addEventListener('click', startRoutePick);
+  document.getElementById('route-pick-cancel')?.addEventListener('click', cancelRoutePick);
 }
 
-function resolveCountryInputToISO3(value) {
+function resolveLocationInput(value) {
   if (!value) return null;
   const v = value.trim();
-  // Jeśli użytkownik wpisał bezpośrednio ISO3
-  if (/^[A-Za-z]{3}$/.test(v)) {
-    const iso = v.toUpperCase();
-    if (countriesIndex.some(c => c.iso3 === iso)) return iso;
+  // Format z ID: Name [ID]
+  const mid = v.match(/\[([A-Za-z0-9_\-]+)\]\s*$/);
+  if (mid) {
+    const id = mid[1];
+    const node = nodesIndex.find(n => n.id === id);
+    if (node) return { type: 'node', id };
   }
-  // Spróbuj sparsować "Nazwa (ISO)"
+  // ISO3: Nazwa (ISO)
   const m = v.match(/\(([A-Za-z]{3})\)\s*$/);
   if (m) {
     const iso = m[1].toUpperCase();
-    if (countriesIndex.some(c => c.iso3 === iso)) return iso;
+    if (countriesIndex.some(c => c.iso3 === iso)) return { type: 'country', iso3: iso };
   }
-  // Spróbuj dopasować po nazwie (case-insensitive, startsWith)
+  // Bez nawiasów: spróbuj najpierw node po nazwie, potem kraj
   const low = v.toLowerCase();
-  const exact = countriesIndex.find(c => c.name.toLowerCase() === low);
-  if (exact) return exact.iso3;
-  const starts = countriesIndex.find(c => c.name.toLowerCase().startsWith(low));
-  if (starts) return starts.iso3;
+  let node = nodesIndex.find(n => n.name.toLowerCase() === low);
+  if (node) return { type: 'node', id: node.id };
+  node = nodesIndex.find(n => n.name.toLowerCase().startsWith(low));
+  if (node) return { type: 'node', id: node.id };
+  let ctry = countriesIndex.find(c => c.name.toLowerCase() === low);
+  if (ctry) return { type: 'country', iso3: ctry.iso3 };
+  ctry = countriesIndex.find(c => c.name.toLowerCase().startsWith(low));
+  if (ctry) return { type: 'country', iso3: ctry.iso3 };
+  // Trzy litery: ISO3 bez nawiasów
+  if (/^[A-Za-z]{3}$/.test(v)) {
+    const iso = v.toUpperCase();
+    if (countriesIndex.some(c => c.iso3 === iso)) return { type: 'country', iso3: iso };
+  }
   return null;
+}
+
+function readFactorParams() {
+  return {
+    factorRoad: parseFloat(document.getElementById('factor-road')?.value || '1.0'),
+    factorSea: parseFloat(document.getElementById('factor-sea')?.value || '0.5'),
+    factorAir: parseFloat(document.getElementById('factor-air')?.value || '5.0')
+  };
+}
+
+function requestRouteFromSelections(fromSel, toSel, params) {
+  if (!fromSel || !toSel) {
+    renderRouteSummary({ error: 'Nie rozpoznano punktów start/cel.' });
+    return;
+  }
+  if (fromSel.type === 'country' && toSel.type === 'country') {
+    computeRouteRequest(fromSel.iso3, toSel.iso3, params);
+    return;
+  }
+  // Nowy tryb: node-level
+  renderRouteSummary({ loading: true });
+  if (routeLayer) { try { map.removeLayer(routeLayer); } catch {}; routeLayer = null; }
+  if (routeSegments && routeSegments.length) {
+    for (const seg of routeSegments) { try { map.removeLayer(seg); } catch {} }
+    routeSegments = [];
+  }
+  fetch('/api/route', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      source_node: fromSel.type === 'node' ? fromSel.id : undefined,
+      target_node: toSel.type === 'node' ? toSel.id : undefined,
+      source_iso3: fromSel.type === 'country' ? fromSel.iso3 : undefined,
+      target_iso3: toSel.type === 'country' ? toSel.iso3 : undefined,
+      factor_sea: params.factorSea, factor_air: params.factorAir, factor_road: params.factorRoad
+    })
+  })
+    .then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })))
+    .then(({ ok, status, data }) => {
+      if (!ok) { renderRouteSummary({ error: data?.error || `Błąd ${status}` }); return; }
+      renderRouteResult(data);
+    })
+    .catch(err => { console.error(err); renderRouteSummary({ error: 'Nie udało się wyznaczyć trasy.' }); });
 }
 
 function computeRouteRequest(sourceIso3, targetIso3, { factorRoad, factorSea, factorAir }) {
@@ -668,6 +825,65 @@ function applyPreset(name) {
     sea.value = '0.8';
     air.value = '2.0';
   }
+}
+
+// ---------------- Interakcja wyboru trasy (kliknięcia na mapie) ----------------
+function startRoutePick() {
+  routePick.active = true;
+  routePick.stage = 'from';
+  setRoutePanelMessage('Kliknij kraj początkowy na mapie.');
+}
+
+function cancelRoutePick() {
+  routePick.active = false;
+  routePick.stage = 'from';
+}
+
+function setRoutePanelMessage(msg) {
+  const sumEl = document.getElementById('route-summary');
+  const legsEl = document.getElementById('route-legs');
+  if (!sumEl || !legsEl) return;
+  sumEl.innerHTML = `<span style="color:#374151;">${escapeHtml(msg)}</span>`;
+  legsEl.innerHTML = '';
+}
+
+function setRouteInputValue(which, name, iso3) {
+  if (which === 'from') {
+    const el = document.getElementById('route-from');
+    if (el) el.value = `${name} (${iso3})`;
+  } else {
+    const el = document.getElementById('route-to');
+    if (el) el.value = `${name} (${iso3})`;
+  }
+}
+
+function setRouteInput(which, value) {
+  const el = document.getElementById(which === 'from' ? 'route-from' : 'route-to');
+  if (el) el.value = value;
+}
+
+// ---------------- Tariffs coloring for starting selection ----------------
+function colorTariffsForStart(fromSel) {
+  try {
+    if (!fromSel) return;
+    if (fromSel.type === 'country') {
+      const iso3 = fromSel.iso3;
+      const c = countriesIndex.find(c => c.iso3 === iso3);
+      const name = c ? c.name : iso3;
+      setSelectedCountry(name, iso3);
+      loadTariffs(iso3);
+      return;
+    }
+    if (fromSel.type === 'node') {
+      const node = nodesIndex.find(n => n.id === fromSel.id);
+      const iso3 = (node?.iso3 || '').toUpperCase();
+      if (!iso3) return; // waypoint morski itp.
+      const name = node?.country || node?.name || iso3;
+      setSelectedCountry(name, iso3);
+      loadTariffs(iso3);
+      return;
+    }
+  } catch {}
 }
 
 // ---------------- Geodezyjne próbkowanie wielkiego koła ----------------
