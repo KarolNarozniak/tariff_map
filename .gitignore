@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environments / secrets (never commit)
+.env
+.env.*
+!.env.example
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

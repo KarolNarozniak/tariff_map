@@ -9,6 +9,8 @@ from interface.web import web_bp
 try:
     from dotenv import load_dotenv
     load_dotenv()  # wczyta zmienne z .env, jeśli istnieje
+    # Dodatkowe lokalne zmienne (niecommitowalne) – .env.local nadpisuje tylko brakujące wartości
+    load_dotenv(dotenv_path='.env.local', override=False)
 except Exception:
     pass
 

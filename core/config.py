@@ -5,6 +5,10 @@ import os
 class Config:
     # Flask
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
+    # Bezpieczniejsze ciasteczka sesji (konfigurowalne przez ENV)
+    SESSION_COOKIE_HTTPONLY = bool(int(os.environ.get("SESSION_COOKIE_HTTPONLY", "1")))
+    SESSION_COOKIE_SECURE = bool(int(os.environ.get("SESSION_COOKIE_SECURE", "0")))  # 1 w prod HTTPS
+    SESSION_COOKIE_SAMESITE = os.environ.get("SESSION_COOKIE_SAMESITE", "Lax")
 
     # Admin – proste logowanie
     ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
@@ -17,6 +21,8 @@ class Config:
 
     # WITS – opcjonalny klucz (często zbędny)
     WITS_API_KEY = os.environ.get("WITS_API_KEY", "")
+    # Fallback rok dla WITS/TRN, gdy API nie zwróci lat
+    WITS_FALLBACK_YEAR = os.environ.get("WITS_FALLBACK_YEAR", "2021")
 
     # Produkt – tytoń (HS 24 – uproszczone)
     TOBACCO_CLASSIFICATION = os.environ.get("TOBACCO_CLASSIFICATION", "HS")

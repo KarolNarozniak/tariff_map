@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "tariff-map"
+version = "0.1.0"
+description = "Interactive tariff and logistics routing map (Flask)"
+authors = ["Karol Narozniak <you@example.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "" }]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+Flask = "^3.0.0"
+requests = "^2.31.0"
+python-dotenv = "^1.0.0"
+# Used by tools/build_tariff_index_from_macmap.py
+pandas = "^2.1.0"
+# Optional production server
+gunicorn = {version = "^21.2.0", optional = true}
+
+[tool.poetry.extras]
+prod = ["gunicorn"]
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.3.0"
+isort = "^5.12.0"
+
+[tool.poetry.scripts]
+# Example: poetry run tariff-map -- starts app via Flask cli
+# If you want a CLI entrypoint, you can add one here.
+
+[build-system]
+requires = ["poetry-core>=1.6.1"]
+build-backend = "poetry.core.masonry.api"
