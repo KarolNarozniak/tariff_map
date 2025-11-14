@@ -80,16 +80,34 @@ def get_tariffs():
 def get_logistics_nodes():
     """
     Zwraca punkty logistyczne (porty, lotniska itd.) jako GeoJSON.
-    Dane trzymamy w data/logistics_nodes.json
+    Dane trzymamy w data/logistics_nodes.json + opcjonalnie data/logistics_nodes_extra.json
     """
-    path = Path("data/logistics_nodes.json")
-    if not path.exists():
-        # pusty FeatureCollection żeby frontend się nie wywalał
-        return jsonify({"type": "FeatureCollection", "features": []})
+    def _read_features(p: Path):
+        if not p.exists():
+            return []
+        with p.open("r", encoding="utf-8") as f:
+            gj = json.load(f)
+        feats = gj.get("features", [])
+        return [feat for feat in feats if isinstance(feat, dict)]
 
-    with path.open("r", encoding="utf-8") as f:
-        data = json.load(f)
-    return jsonify(data)
+    base_feats = _read_features(Path("data/logistics_nodes.json"))
+    extra_feats = _read_features(Path("data/logistics_nodes_extra.json"))
+
+    # dedupe by properties.id when present
+    merged = []
+    seen = set()
+    for feat in base_feats + extra_feats:
+        props = feat.get("properties", {}) if isinstance(feat, dict) else {}
+        fid = props.get("id")
+        if fid is None:
+            merged.append(feat)
+        else:
+            if fid in seen:
+                continue
+            seen.add(fid)
+            merged.append(feat)
+
+    return jsonify({"type": "FeatureCollection", "features": merged})
 
 
 # --------- Graf logistyczny: węzły (kraje + huby) i krawędzie ----------
@@ -182,29 +200,36 @@ def _load_countries_nodes():
 
 
 def _load_hubs_nodes():
-    path = Path("data/logistics_nodes.json")
-    if not path.exists():
-        return []
-    with path.open("r", encoding="utf-8") as f:
-        gj = json.load(f)
-    nodes = []
-    for feat in gj.get("features", []):
-        props = feat.get("properties", {})
-        geom = feat.get("geometry", {})
-        if (geom or {}).get("type") != "Point":
-            continue
-        coords = geom.get("coordinates") or []
-        if len(coords) < 2:
-            continue
-        nodes.append({
-            "id": str(props.get("id") or props.get("name")),
-            "name": str(props.get("name") or props.get("id") or "hub"),
-            "kind": str(props.get("kind") or "hub"),
-            "country": props.get("country"),
-            "iso3": props.get("iso3"),
-            "coordinates": [float(coords[0]), float(coords[1])],
-        })
-    return nodes
+    def _read_file(p: Path):
+        if not p.exists():
+            return []
+        with p.open("r", encoding="utf-8") as f:
+            gj = json.load(f)
+        out = []
+        for feat in gj.get("features", []):
+            props = feat.get("properties", {})
+            geom = feat.get("geometry", {})
+            if (geom or {}).get("type") != "Point":
+                continue
+            coords = geom.get("coordinates") or []
+            if len(coords) < 2:
+                continue
+            out.append({
+                "id": str(props.get("id") or props.get("name")),
+                "name": str(props.get("name") or props.get("id") or "hub"),
+                "kind": str(props.get("kind") or "hub"),
+                "country": props.get("country"),
+                "iso3": props.get("iso3"),
+                "coordinates": [float(coords[0]), float(coords[1])],
+            })
+        return out
+
+    base_nodes = _read_file(Path("data/logistics_nodes.json"))
+    extra_nodes = _read_file(Path("data/logistics_nodes_extra.json"))
+    merged = {}
+    for n in base_nodes + extra_nodes:
+        merged[n["id"]] = n  # dedupe by id (extra can extend, but base wins if same id order-wise)
+    return list(merged.values())
 
 
 def _load_sea_waypoints():
@@ -332,11 +357,13 @@ def _build_graph(factor_road: float, factor_sea: float, factor_air: float, k_sea
     # kraj <-> najbliższy port i lotnisko
     for c in countries:
         clon, clat = c["coordinates"]
-        # port
-        if ports:
+        c_iso = c.get("iso3")
+        # port – tylko w tym samym kraju (unikamy "drogi przez morze")
+        ports_in_country = [p for p in ports if (p.get("iso3") or "").upper() == (c_iso or "").upper()]
+        if ports_in_country:
             best_p = None
             best_d = 1e18
-            for p in ports:
+            for p in ports_in_country:
                 plon, plat = p["coordinates"]
                 d = _haversine_km(clon, clat, plon, plat)
                 if d < best_d:
@@ -345,11 +372,12 @@ def _build_graph(factor_road: float, factor_sea: float, factor_air: float, k_sea
                 w = best_d * factor_road
                 edges.append({"source": c["id"], "target": best_p["id"], "transport": "road", "distance_km": best_d, "weight": w})
                 edges.append({"source": best_p["id"], "target": c["id"], "transport": "road", "distance_km": best_d, "weight": w})
-        # lotnisko
-        if airports:
+        # lotnisko – tylko w tym samym kraju
+        airports_in_country = [a for a in airports if (a.get("iso3") or "").upper() == (c_iso or "").upper()]
+        if airports_in_country:
             best_a = None
             best_d = 1e18
-            for a in airports:
+            for a in airports_in_country:
                 alon, alat = a["coordinates"]
                 d = _haversine_km(clon, clat, alon, alat)
                 if d < best_d:
@@ -382,8 +410,8 @@ def _build_graph(factor_road: float, factor_sea: float, factor_air: float, k_sea
 
     # Morski graf: jeśli mamy waypointy morskie, użyj ich zamiast bezpośrednich port<->port
     if sea_nodes:
-        # port <-> najbliższe waypointy morskie (w promieniu np. 600 km)
-        max_port_wp_km = 600.0
+        # port <-> najbliższe waypointy morskie (bez sztywnego limitu odległości, aby zapewnić łączność)
+        max_port_wp_km = 20000.0
         k_wp = max(1, min(3, k_sea or 2))
         for p in ports:
             plon, plat = p["coordinates"]

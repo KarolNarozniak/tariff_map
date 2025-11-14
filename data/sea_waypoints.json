@@ -1,45 +1,49 @@
 {
   "type": "FeatureCollection",
   "features": [
-    {
-      "type": "Feature",
-      "properties": {"id": "SEA_GIB", "name": "Gibraltar Strait Offshore", "kind": "sea_waypoint", "neighbors": ["SEA_LISBON"]},
-      "geometry": {"type": "Point", "coordinates": [-5.6, 35.8]}
-    },
-    {
-      "type": "Feature",
-      "properties": {"id": "SEA_LISBON", "name": "Off Lisbon", "kind": "sea_waypoint", "neighbors": ["SEA_GIB", "SEA_BISCAY"]},
-      "geometry": {"type": "Point", "coordinates": [-9.7, 38.8]}
-    },
-    {
-      "type": "Feature",
-      "properties": {"id": "SEA_BISCAY", "name": "Bay of Biscay Offshore", "kind": "sea_waypoint", "neighbors": ["SEA_LISBON", "SEA_BREST", "SEA_EN_CH_W"]},
-      "geometry": {"type": "Point", "coordinates": [-6.0, 46.0]}
-    },
-    {
-      "type": "Feature",
-      "properties": {"id": "SEA_BREST", "name": "Off Brittany (Brest)", "kind": "sea_waypoint", "neighbors": ["SEA_BISCAY", "SEA_EN_CH_W"]},
-      "geometry": {"type": "Point", "coordinates": [-6.0, 48.7]}
-    },
-    {
-      "type": "Feature",
-      "properties": {"id": "SEA_EN_CH_W", "name": "English Channel West", "kind": "sea_waypoint", "neighbors": ["SEA_BISCAY", "SEA_BREST", "SEA_EN_CH_E"]},
-      "geometry": {"type": "Point", "coordinates": [-5.0, 49.5]}
-    },
-    {
-      "type": "Feature",
-      "properties": {"id": "SEA_EN_CH_E", "name": "English Channel East (Dover)", "kind": "sea_waypoint", "neighbors": ["SEA_EN_CH_W", "SEA_NORTHSEA_NL"]},
-      "geometry": {"type": "Point", "coordinates": [1.5, 51.2]}
-    },
-    {
-      "type": "Feature",
-      "properties": {"id": "SEA_NORTHSEA_NL", "name": "North Sea Offshore (NL)", "kind": "sea_waypoint", "neighbors": ["SEA_EN_CH_E", "SEA_NORTHSEA_DE"]},
-      "geometry": {"type": "Point", "coordinates": [3.0, 53.0]}
-    },
-    {
-      "type": "Feature",
-      "properties": {"id": "SEA_NORTHSEA_DE", "name": "North Sea Offshore (DE)", "kind": "sea_waypoint", "neighbors": ["SEA_NORTHSEA_NL"]},
-      "geometry": {"type": "Point", "coordinates": [7.0, 54.0]}
-    }
+    {"type": "Feature", "properties": {"id": "SEA_GULF_GUINEA_W", "name": "Gulf of Guinea W", "kind": "sea_waypoint", "neighbors": ["SEA_GULF_GUINEA_E"]}, "geometry": {"type": "Point", "coordinates": [-6.0, 3.5]}},
+    {"type": "Feature", "properties": {"id": "SEA_GULF_GUINEA_E", "name": "Gulf of Guinea E", "kind": "sea_waypoint", "neighbors": ["SEA_GULF_GUINEA_W", "SEA_W_AFRICA_ATL"]}, "geometry": {"type": "Point", "coordinates": [4.0, 2.5]}},
+    {"type": "Feature", "properties": {"id": "SEA_W_AFRICA_ATL", "name": "W Africa Atlantic", "kind": "sea_waypoint", "neighbors": ["SEA_GULF_GUINEA_E", "SEA_GIB"]}, "geometry": {"type": "Point", "coordinates": [-10.0, 12.0]}},
+
+    {"type": "Feature", "properties": {"id": "SEA_GIB", "name": "Strait of Gibraltar Offshore", "kind": "sea_waypoint", "neighbors": ["SEA_W_AFRICA_ATL", "SEA_ALBORAN"]}, "geometry": {"type": "Point", "coordinates": [-5.6, 35.8]}},
+    {"type": "Feature", "properties": {"id": "SEA_ALBORAN", "name": "Alboran Sea", "kind": "sea_waypoint", "neighbors": ["SEA_GIB", "SEA_ALGERIAN"]}, "geometry": {"type": "Point", "coordinates": [-2.5, 36.5]}},
+    {"type": "Feature", "properties": {"id": "SEA_ALGERIAN", "name": "Algerian Basin", "kind": "sea_waypoint", "neighbors": ["SEA_ALBORAN", "SEA_SARDINIA_W"]}, "geometry": {"type": "Point", "coordinates": [3.0, 37.0]}},
+    {"type": "Feature", "properties": {"id": "SEA_SARDINIA_W", "name": "Off W Sardinia", "kind": "sea_waypoint", "neighbors": ["SEA_ALGERIAN", "SEA_SICILY"]}, "geometry": {"type": "Point", "coordinates": [6.0, 39.5]}},
+    {"type": "Feature", "properties": {"id": "SEA_SICILY", "name": "Strait of Sicily Offshore", "kind": "sea_waypoint", "neighbors": ["SEA_SARDINIA_W", "SEA_IONIAN_W"]}, "geometry": {"type": "Point", "coordinates": [12.5, 36.5]}},
+    {"type": "Feature", "properties": {"id": "SEA_IONIAN_W", "name": "Ionian Sea W", "kind": "sea_waypoint", "neighbors": ["SEA_SICILY", "SEA_CRETE", "SEA_AEGEAN_S"]}, "geometry": {"type": "Point", "coordinates": [17.0, 36.5]}},
+    {"type": "Feature", "properties": {"id": "SEA_CRETE", "name": "South of Crete", "kind": "sea_waypoint", "neighbors": ["SEA_IONIAN_W", "SEA_LEVANT"]}, "geometry": {"type": "Point", "coordinates": [24.5, 34.5]}},
+    {"type": "Feature", "properties": {"id": "SEA_LEVANT", "name": "Levantine Sea", "kind": "sea_waypoint", "neighbors": ["SEA_CRETE", "SEA_PORT_SAID"]}, "geometry": {"type": "Point", "coordinates": [31.0, 33.5]}},
+    {"type": "Feature", "properties": {"id": "SEA_PORT_SAID", "name": "Off Port Said", "kind": "sea_waypoint", "neighbors": ["SEA_LEVANT", "SEA_SUEZ_GULF"]}, "geometry": {"type": "Point", "coordinates": [32.3, 31.4]}},
+    {"type": "Feature", "properties": {"id": "SEA_SUEZ_GULF", "name": "Gulf of Suez N", "kind": "sea_waypoint", "neighbors": ["SEA_PORT_SAID", "SEA_BAB_EL_MANDEB"]}, "geometry": {"type": "Point", "coordinates": [33.0, 29.5]}},
+    {"type": "Feature", "properties": {"id": "SEA_BAB_EL_MANDEB", "name": "Bab-el-Mandeb", "kind": "sea_waypoint", "neighbors": ["SEA_SUEZ_GULF", "SEA_GULF_ADEN"]}, "geometry": {"type": "Point", "coordinates": [43.33, 12.58]}},
+    {"type": "Feature", "properties": {"id": "SEA_GULF_ADEN", "name": "Gulf of Aden", "kind": "sea_waypoint", "neighbors": ["SEA_BAB_EL_MANDEB", "SEA_ARABIAN_SEA_W"]}, "geometry": {"type": "Point", "coordinates": [49.0, 13.0]}},
+
+    {"type": "Feature", "properties": {"id": "SEA_AEGEAN_S", "name": "Aegean South", "kind": "sea_waypoint", "neighbors": ["SEA_IONIAN_W", "SEA_DARDANELLES"]}, "geometry": {"type": "Point", "coordinates": [24.0, 38.0]}},
+    {"type": "Feature", "properties": {"id": "SEA_DARDANELLES", "name": "Dardanelles", "kind": "sea_waypoint", "neighbors": ["SEA_AEGEAN_S", "SEA_BOSPHORUS"]}, "geometry": {"type": "Point", "coordinates": [26.4, 40.2]}},
+    {"type": "Feature", "properties": {"id": "SEA_BOSPHORUS", "name": "Bosphorus", "kind": "sea_waypoint", "neighbors": ["SEA_DARDANELLES", "SEA_BLACKSEA_W"]}, "geometry": {"type": "Point", "coordinates": [29.0, 41.2]}},
+    {"type": "Feature", "properties": {"id": "SEA_BLACKSEA_W", "name": "Black Sea W", "kind": "sea_waypoint", "neighbors": ["SEA_BOSPHORUS", "SEA_BLACKSEA_NE"]}, "geometry": {"type": "Point", "coordinates": [30.5, 42.5]}},
+    {"type": "Feature", "properties": {"id": "SEA_BLACKSEA_NE", "name": "Black Sea NE", "kind": "sea_waypoint", "neighbors": ["SEA_BLACKSEA_W"]}, "geometry": {"type": "Point", "coordinates": [37.0, 44.0]}},
+
+    {"type": "Feature", "properties": {"id": "SEA_LISBON", "name": "Off Lisbon", "kind": "sea_waypoint", "neighbors": ["SEA_BISCAY", "SEA_GIB"]}, "geometry": {"type": "Point", "coordinates": [-9.7, 38.8]}},
+    {"type": "Feature", "properties": {"id": "SEA_BISCAY", "name": "Bay of Biscay", "kind": "sea_waypoint", "neighbors": ["SEA_LISBON", "SEA_BREST", "SEA_EN_CH_W"]}, "geometry": {"type": "Point", "coordinates": [-6.0, 46.0]}},
+    {"type": "Feature", "properties": {"id": "SEA_BREST", "name": "Off Brittany (Brest)", "kind": "sea_waypoint", "neighbors": ["SEA_BISCAY", "SEA_EN_CH_W"]}, "geometry": {"type": "Point", "coordinates": [-6.0, 48.7]}},
+    {"type": "Feature", "properties": {"id": "SEA_EN_CH_W", "name": "English Channel West", "kind": "sea_waypoint", "neighbors": ["SEA_BISCAY", "SEA_BREST", "SEA_EN_CH_E"]}, "geometry": {"type": "Point", "coordinates": [-5.0, 49.5]}},
+    {"type": "Feature", "properties": {"id": "SEA_EN_CH_E", "name": "English Channel East", "kind": "sea_waypoint", "neighbors": ["SEA_EN_CH_W", "SEA_NORTHSEA_NL"]}, "geometry": {"type": "Point", "coordinates": [1.5, 51.2]}},
+    {"type": "Feature", "properties": {"id": "SEA_NORTHSEA_NL", "name": "North Sea (NL)", "kind": "sea_waypoint", "neighbors": ["SEA_EN_CH_E", "SEA_NORTHSEA_DE"]}, "geometry": {"type": "Point", "coordinates": [3.0, 53.0]}},
+    {"type": "Feature", "properties": {"id": "SEA_NORTHSEA_DE", "name": "North Sea (DE)", "kind": "sea_waypoint", "neighbors": ["SEA_NORTHSEA_NL"]}, "geometry": {"type": "Point", "coordinates": [7.0, 54.0]}},
+
+    {"type": "Feature", "properties": {"id": "SEA_ARABIAN_SEA_W", "name": "Arabian Sea W", "kind": "sea_waypoint", "neighbors": ["SEA_GULF_ADEN", "SEA_HORMUZ"]}, "geometry": {"type": "Point", "coordinates": [55.0, 18.0]}},
+    {"type": "Feature", "properties": {"id": "SEA_HORMUZ", "name": "Strait of Hormuz", "kind": "sea_waypoint", "neighbors": ["SEA_ARABIAN_SEA_W", "SEA_ARABIAN_SEA_E"]}, "geometry": {"type": "Point", "coordinates": [56.5, 26.6]}},
+    {"type": "Feature", "properties": {"id": "SEA_ARABIAN_SEA_E", "name": "Arabian Sea E", "kind": "sea_waypoint", "neighbors": ["SEA_HORMUZ", "SEA_MALABAR"]}, "geometry": {"type": "Point", "coordinates": [62.0, 18.0]}},
+    {"type": "Feature", "properties": {"id": "SEA_MALABAR", "name": "Off Malabar Coast", "kind": "sea_waypoint", "neighbors": ["SEA_ARABIAN_SEA_E", "SEA_MALACCA_W"]}, "geometry": {"type": "Point", "coordinates": [74.0, 12.0]}},
+    {"type": "Feature", "properties": {"id": "SEA_MALACCA_W", "name": "Strait of Malacca W", "kind": "sea_waypoint", "neighbors": ["SEA_MALABAR", "SEA_MALACCA_E"]}, "geometry": {"type": "Point", "coordinates": [98.0, 4.0]}},
+    {"type": "Feature", "properties": {"id": "SEA_MALACCA_E", "name": "Strait of Malacca E", "kind": "sea_waypoint", "neighbors": ["SEA_MALACCA_W"]}, "geometry": {"type": "Point", "coordinates": [102.0, 3.0]}},
+
+    {"type": "Feature", "properties": {"id": "SEA_GOOD_HOPE", "name": "Cape of Good Hope", "kind": "sea_waypoint", "neighbors": ["SEA_W_AFRICA_ATL"]}, "geometry": {"type": "Point", "coordinates": [18.45, -34.34]}},
+    {"type": "Feature", "properties": {"id": "SEA_PANAMA", "name": "Panama Canal Approaches", "kind": "sea_waypoint", "neighbors": []}, "geometry": {"type": "Point", "coordinates": [-79.65, 9.08]}}
+    ,
+    {"type": "Feature", "properties": {"id": "SEA_PAC_E_ASIA1", "name": "NW Pacific off Japan", "kind": "sea_waypoint", "neighbors": ["SEA_PAC_C1"]}, "geometry": {"type": "Point", "coordinates": [150.0, 35.0]}},
+    {"type": "Feature", "properties": {"id": "SEA_PAC_C1", "name": "Central North Pacific", "kind": "sea_waypoint", "neighbors": ["SEA_PAC_E_ASIA1", "SEA_PAC_NEAR_US1"]}, "geometry": {"type": "Point", "coordinates": [-170.0, 30.0]}},
+    {"type": "Feature", "properties": {"id": "SEA_PAC_NEAR_US1", "name": "NE Pacific off US", "kind": "sea_waypoint", "neighbors": ["SEA_PAC_C1"]}, "geometry": {"type": "Point", "coordinates": [-130.0, 40.0]}}
   ]
 }

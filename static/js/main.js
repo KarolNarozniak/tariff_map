@@ -589,7 +589,7 @@ function renderRouteResult(resp) {
   }
   legsEl.innerHTML = html || '<i>Brak danych etapów.</i>';
 
-  // Rysowanie linii: segmentami wg transportu
+  // Rysowanie linii: segmentami wg transportu (geodezyjnie, aby nie "przecinać" kontynentów na dalekich trasach)
   const group = L.layerGroup();
   const bounds = L.latLngBounds([]);
   routeSegments = [];
@@ -600,7 +600,8 @@ function renderRouteResult(resp) {
     if (!sNode || !tNode) continue;
     const s = sNode.coordinates, t = tNode.coordinates;
     if (!Array.isArray(s) || !Array.isArray(t) || s.length < 2 || t.length < 2) continue;
-    const latlngs = [ [s[1], s[0]], [t[1], t[0]] ];
+    // wygeneruj punkty wielkiego koła (great circle) dla lepszej prezentacji na mapie web-mercator
+    const latlngs = greatCirclePath(s[1], s[0], t[1], t[0], 64);
     const color = transportColor(leg.transport);
     const pl = L.polyline(latlngs, { color, weight: 4, opacity: 0.95 }).addTo(group);
     pl.bindTooltip(`${escapeHtml(sNode.name)} → ${escapeHtml(tNode.name)}<br/><i>${leg.transport}</i> • ${Number(leg.distance_km||0).toFixed(0)} km`);
@@ -667,4 +668,58 @@ function applyPreset(name) {
     sea.value = '0.8';
     air.value = '2.0';
   }
+}
+
+// ---------------- Geodezyjne próbkowanie wielkiego koła ----------------
+function toRad(d) { return d * Math.PI / 180; }
+function toDeg(r) { return r * 180 / Math.PI; }
+
+// Zwraca tablicę [ [lat, lon], ... ] wzdłuż wielkiego koła między punktami
+function greatCirclePath(lat1, lon1, lat2, lon2, steps = 64) {
+  // konwersja do radianów
+  const φ1 = toRad(lat1), λ1 = toRad(lon1);
+  const φ2 = toRad(lat2), λ2 = toRad(lon2);
+
+  // jeśli prawie identyczne punkty
+  if (Math.abs(lat1 - lat2) < 1e-9 && Math.abs(lon1 - lon2) < 1e-9) {
+    return [[lat1, lon1]];
+  }
+
+  // konwersja do 3D na sferze jednostkowej
+  const v1 = [Math.cos(φ1) * Math.cos(λ1), Math.cos(φ1) * Math.sin(λ1), Math.sin(φ1)];
+  const v2 = [Math.cos(φ2) * Math.cos(λ2), Math.cos(φ2) * Math.sin(λ2), Math.sin(φ2)];
+
+  // kąt między v1 i v2
+  let dot = v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
+  dot = Math.min(1, Math.max(-1, dot));
+  const ω = Math.acos(dot);
+
+  // jeśli prawie przeciwległe punkty, mała perturbacja by uniknąć nieokreśloności
+  if (Math.abs(ω) < 1e-12) {
+    return [[lat1, lon1], [lat2, lon2]];
+  }
+
+  const sinω = Math.sin(ω);
+  const path = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const A = Math.sin((1 - t) * ω) / sinω;
+    const B = Math.sin(t * ω) / sinω;
+    const x = A * v1[0] + B * v2[0];
+    const y = A * v1[1] + B * v2[1];
+    const z = A * v1[2] + B * v2[2];
+    const φ = Math.atan2(z, Math.sqrt(x*x + y*y));
+    const λ = Math.atan2(y, x);
+    path.push([toDeg(φ), normalizeLon(toDeg(λ))]);
+  }
+  // konwersja do [lat, lon] => Leaflet używa [lat, lon]
+  return path.map(([la, lo]) => [la, lo]);
+}
+
+function normalizeLon(lon) {
+  // sprowadź do [-180, 180)
+  let l = lon;
+  while (l < -180) l += 360;
+  while (l >= 180) l -= 360;
+  return l;
 }
