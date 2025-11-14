@@ -380,6 +380,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 document.addEventListener("DOMContentLoaded", initMap);
+document.addEventListener("DOMContentLoaded", initDrawerUI);
 
 function loadLogisticsNodes() {
   fetch("/api/logistics_nodes")
@@ -782,6 +783,12 @@ function renderRouteResult(resp) {
       }
     });
   });
+
+  // Auto-open drawer on route result
+  try {
+    const drawer = document.getElementById('right-drawer');
+    drawer?.classList?.add('open');
+  } catch {}
 }
 
 function findNodeInResponse(resp, nodeId) {
@@ -845,6 +852,7 @@ function setRoutePanelMessage(msg) {
   if (!sumEl || !legsEl) return;
   sumEl.innerHTML = `<span style="color:#374151;">${escapeHtml(msg)}</span>`;
   legsEl.innerHTML = '';
+  try { document.getElementById('right-drawer')?.classList?.add('open'); } catch {}
 }
 
 function setRouteInputValue(which, name, iso3) {
@@ -884,6 +892,36 @@ function colorTariffsForStart(fromSel) {
       return;
     }
   } catch {}
+}
+
+// ---------------- Drawer UI ----------------
+function initDrawerUI() {
+  const drawer = document.getElementById('right-drawer');
+  const toggle = document.getElementById('drawer-toggle');
+  const dockBtn = document.getElementById('drawer-dock');
+  const mapContainer = document.querySelector('.main-map-container');
+  if (!drawer || !toggle) return;
+  // Domyślnie otwarty
+  drawer.classList.add('open');
+
+  // Przywróć preferencję dockowania
+  try {
+    const pref = localStorage.getItem('drawerDocked');
+    if (pref === '1') {
+      mapContainer?.classList?.add('docked');
+    }
+  } catch {}
+
+  toggle.addEventListener('click', () => {
+    drawer.classList.toggle('open');
+  });
+
+  dockBtn?.addEventListener('click', () => {
+    const docked = mapContainer?.classList?.toggle('docked');
+    try { localStorage.setItem('drawerDocked', docked ? '1' : '0'); } catch {}
+    // Przelicz rozmiar mapy po animacji
+    setTimeout(() => { try { map?.invalidateSize?.(); } catch {} }, 250);
+  });
 }
 
 // ---------------- Geodezyjne próbkowanie wielkiego koła ----------------

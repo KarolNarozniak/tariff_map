@@ -5,23 +5,14 @@
     <meta charset="UTF-8" />
     <title>Tariff Map</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Favicons -->
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- App CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v=20251114" />
+    <!-- Favicons (optional) -->
     <link rel="icon" href="{{ url_for('static', filename='favicon/favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon/favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon/favicon-16x16.png') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='favicon/apple-touch-icon.png') }}">
-    <link rel="mask-icon" href="{{ url_for('static', filename='favicon/safari-pinned-tab.svg') }}" color="#0e6ba8">
-    <link rel="manifest" href="{{ url_for('static', filename='favicon/site.webmanifest') }}">
-    <meta name="theme-color" content="#0e6ba8" />
-
-    <!-- Leaflet CSS (bez SRI, z jsDelivr) -->
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
-    />
-
-    <!-- Twoje style -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
 </head>
 <body>
     <header class="top-bar">
@@ -34,81 +25,97 @@
         </div>
     </header>
 
+    <!-- Górny pasek sterowania trasą -->
+    <section class="top-controls">
+        <div class="controls-row">
+            <div class="field from">
+                <label for="route-from">Skąd</label>
+                <input id="route-from" list="locations-list" placeholder="np. Poland (POL) lub Port of Rotterdam [PORT_ROTTERDAM]" />
+            </div>
+            <div class="field to">
+                <label for="route-to">Dokąd</label>
+                <input id="route-to" list="locations-list" placeholder="np. Germany (DEU) lub Frankfurt Airport [AIR_FRA]" />
+            </div>
+            <datalist id="locations-list"></datalist>
+
+            <div class="field compact">
+                <label>Presety</label>
+                <div class="btn-group">
+                    <button type="button" id="preset-cheap" class="btn btn-ghost">Najtańsza</button>
+                    <button type="button" id="preset-balanced" class="btn btn-ghost">Zbalansowana</button>
+                    <button type="button" id="preset-fast" class="btn btn-ghost">Najszybsza</button>
+                </div>
+            </div>
+
+            <div class="field factors">
+                <label>Wagi transportu</label>
+                <div class="factors-grid">
+                    <span>Droga</span>
+                    <input id="factor-road" type="number" step="0.1" min="0.1" max="10" value="1.0" />
+                    <span>Morze</span>
+                    <input id="factor-sea" type="number" step="0.1" min="0.1" max="10" value="0.5" />
+                    <span>Lotniczy</span>
+                    <input id="factor-air" type="number" step="0.1" min="0.1" max="10" value="5.0" />
+                </div>
+            </div>
+
+            <div class="field compact actions">
+                <label>Mapa</label>
+                <div class="btn-group">
+                    <button type="button" id="route-pick-start" class="btn">Wybierz na mapie</button>
+                    <button type="button" id="route-pick-cancel" class="btn btn-ghost">Anuluj</button>
+                    <button type="button" id="route-go" class="btn btn-primary">Znajdź trasę</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <div class="layout">
         <aside class="sidebar">
-            <h2>Ustawienia</h2>
-            <p>Wybierz kraj docelowy (klikając na mapie), aby zobaczyć stawki celne na tytoń z innych krajów.</p>
+            <h2>Legenda</h2>
             <div id="selected-country" class="selected-country">
                 Brak wybranego kraju.
             </div>
-
-            <hr style="margin:1rem 0; border:0; border-top:1px solid #e5e7eb;" />
-
-            <section id="route-panel">
-                <h3 style="margin-top:0">Wyznacz trasę</h3>
-                <label for="route-from">Skąd (kraj/port/lotnisko/hub):</label>
-                <input id="route-from" list="locations-list" placeholder="np. Poland (POL) lub Port of Rotterdam [PORT_ROTTERDAM]" />
-
-                <label for="route-to" style="margin-top:0.5rem; display:block;">Dokąd (kraj/port/lotnisko/hub):</label>
-                <input id="route-to" list="locations-list" placeholder="np. Germany (DEU) lub Frankfurt Airport [AIR_FRA]" />
-
-                <datalist id="locations-list"></datalist>
-
-                <div style="display:flex; gap:6px; margin-top:6px;">
-                    <button type="button" id="route-pick-start" style="flex:1; padding:6px; border:1px solid #e5e7eb; border-radius:6px; background:#eef2ff; cursor:pointer;">Wybierz na mapie (2 kliknięcia)</button>
-                    <button type="button" id="route-pick-cancel" style="padding:6px 10px; border:1px solid #e5e7eb; border-radius:6px; background:#f9fafb; cursor:pointer;">Anuluj</button>
-                </div>
-
-                <div style="margin-top:0.75rem; font-size:0.85rem; color:#374151;">
-                    Wagi transportu (niższa = tańszy, wyższa = droższy):
-                </div>
-                <div class="factors-grid" style="display:grid; grid-template-columns: 1fr auto; gap:6px; margin-top:6px;">
-                    <label>Droga/kolej</label>
-                    <input id="factor-road" type="number" step="0.1" min="0.1" max="10" value="1.0" />
-                    <label>Morze</label>
-                    <input id="factor-sea" type="number" step="0.1" min="0.1" max="10" value="0.5" />
-                    <label>Lotniczy</label>
-                    <input id="factor-air" type="number" step="0.1" min="0.1" max="10" value="5.0" />
-                </div>
-
-                <div style="margin-top:8px; font-size:0.85rem; color:#374151;">Presety:</div>
-                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">
-                    <button type="button" id="preset-cheap" style="flex:1; padding:6px; border:1px solid #e5e7eb; border-radius:6px; background:#f9fafb; cursor:pointer;">Najtańsza</button>
-                    <button type="button" id="preset-balanced" style="flex:1; padding:6px; border:1px solid #e5e7eb; border-radius:6px; background:#f9fafb; cursor:pointer;">Zbalansowana</button>
-                    <button type="button" id="preset-fast" style="flex:1; padding:6px; border:1px solid #e5e7eb; border-radius:6px; background:#f9fafb; cursor:pointer;">Najszybsza</button>
-                </div>
-
-                <button id="route-go" style="margin-top:0.75rem; width:100%; padding:0.5rem; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer;">Znajdź trasę</button>
-
-                <div id="route-summary" style="margin-top:0.75rem; font-size:0.9rem;"></div>
-                <div id="route-legs" style="margin-top:0.5rem; font-size:0.85rem; max-height:220px; overflow:auto;"></div>
-
-                <div style="margin-top:0.5rem; font-size:0.8rem; color:#374151;">
-                    Kolory odcinków: <span style="display:inline-block;width:10px;height:10px;background:#6b7280;border-radius:2px;margin:0 4px -1px 6px;"></span> droga/kolej,
-                    <span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border-radius:2px;margin:0 4px -1px 6px;"></span> morze,
-                    <span style="display:inline-block;width:10px;height:10px;background:#f97316;border-radius:2px;margin:0 4px -1px 6px;"></span> lotniczy
-                </div>
-
-                <div style="margin-top:0.5rem; font-size:0.75rem; color:#6b7280;">
-                    Podpowiedź: zacznij wpisywać nazwę kraju lub kod ISO3, skorzystaj z listy.
-                </div>
-            </section>
-
-            <div id="legend" class="legend">
-                <!-- uzupełniane w JS -->
-            </div>
+            <div id="legend" class="legend"></div>
         </aside>
 
         <main class="main-map-container">
             <div id="map"></div>
+            <!-- Prawy panel – trasa -->
+            <aside id="right-drawer" class="right-drawer">
+                <div class="drawer-header">
+                    <h3>Trasa</h3>
+                    <div class="btn-group">
+                        <button id="drawer-dock" class="btn btn-ghost" title="Dokuj/Odkuj">📌</button>
+                        <button id="drawer-toggle" class="btn btn-ghost" title="Pokaż/ukryj">⇤</button>
+                    </div>
+                </div>
+                <div id="route-summary" class="drawer-summary"></div>
+                <div id="route-legs" class="drawer-legs"></div>
+                <div class="drawer-legend">
+                    <span class="chip" style="background:#6b7280"></span> droga/kolej
+                    <span class="chip" style="background:#3b82f6"></span> morze
+                    <span class="chip" style="background:#f97316"></span> lotniczy
+                </div>
+            </aside>
         </main>
     </div>
 
-    <!-- Leaflet JS (bez SRI, z jsDelivr) -->
-    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Instrukcja obsługi -->
+    <footer class="instructions">
+        <h3>Jak korzystać</h3>
+        <ol>
+            <li>Wybierz punkt startu i celu u góry (kraj lub węzeł: port/lotnisko/miasto) albo użyj trybu „Wybierz na mapie”.</li>
+            <li>Ustaw wagi transportu lub skorzystaj z presetów.</li>
+            <li>Kliknij „Znajdź trasę” – wynik pojawi się po prawej, a trasa narysuje się na mapie.</li>
+            <li>Najedź na kraje, by zobaczyć stawki celne; kliknięcie kraju ustawia go jako kraj docelowy do kolorowania ceł.</li>
+        </ol>
+    </footer>
 
-    <!-- Logika frontendu -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <!-- Leaflet JS -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- App JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=20251114"></script>
 </body>
 </html>
 
